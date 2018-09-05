@@ -19,6 +19,7 @@ class FTP(Tk):
         self.title("FTP服务器GUI")
         self.set_window_center(self, 300, 180)
         self.resizable(False, False)
+        self.update()
 
         self.server = None
         self.server_thread = None
