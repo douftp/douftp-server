@@ -1,31 +1,34 @@
 #!/usr/bin/env python3
-# -*- coding: UTF-8 -*-
-"""FTP服务器GUI"""
+# -*- coding: utf-8 -*-
+"""DouFTP Server App"""
 
+import _thread
 import os
-import sys
-from tkinter import (Button, Entry, Frame, Label, StringVar, Tk, filedialog, messagebox)
+from tkinter import (Button, Entry, Frame, Label, Menu, StringVar, Tk,
+                     filedialog, messagebox)
 
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
-from pyftpdlib.servers import FTPServer, ThreadedFTPServer
+from pyftpdlib.servers import ThreadedFTPServer
 
-import _thread
+import utils.global_variable as g
+from utils.functions import set_window_center
+from window.about import WinAbout
 
 
-class FTP(Tk):
+class App(Tk):
+
     def __init__(self):
         Tk.__init__(self)
-        self.title("FTP服务器GUI")
-        self.set_window_center(self, 300, 180)
+        self.title(g.get_item('APP_DISPLAY_NAME'))
+        set_window_center(self, 300, 180)
         self.resizable(False, False)
-        self.update()
 
         self.server = None
         self.server_thread = None
         self.running = StringVar(value="normal")
-        self.var_username = StringVar(value="doudou")
-        self.var_passwd = StringVar(value="doudou")
+        self.var_username = StringVar(value="douftp")
+        self.var_passwd = StringVar(value="douftp")
         self.var_address = StringVar(value="127.0.0.1")
         self.var_port = StringVar(value="3333")
         self.var_path = StringVar(value=".")  # 默认路径
@@ -36,7 +39,13 @@ class FTP(Tk):
         self.entry_port = None
         self.entry_path = None
 
+        self.menubar = None
+        self.win_about = None
+
+        self.load_menu()
         self.load_view()
+
+        self.mainloop()
 
     def run_ftp(self):
         if os.path.isdir(self.var_path.get()) is not True:
@@ -60,11 +69,10 @@ class FTP(Tk):
         authorizer = DummyAuthorizer()
 
         # 添加用户权限和路径，括号内的参数是(用户名， 密码， 用户目录， 权限)
-        authorizer.add_user(
-            self.var_username.get(),
-            self.var_passwd.get(),
-            self.var_path.get(),
-            perm="elradfmwMT")
+        authorizer.add_user(self.var_username.get(),
+                            self.var_passwd.get(),
+                            self.var_path.get(),
+                            perm="elradfmwMT")
 
         # 添加匿名用户，任何人都可以访问，否则需要输入用户名和密码才能访问
         # 匿名用户只需要配置路径
@@ -81,8 +89,27 @@ class FTP(Tk):
         # 开始服务
         self.server.serve_forever()
 
+    def load_menu(self):
+        self.menubar = Menu(self)
+        self.createcommand('tk::mac::ShowPreferences', self.open_settings)
+
+        # 关于
+        # 系统内置菜单：name='apple'，针对 Mac
+        m_app = Menu(self.menubar, name='apple')
+        m_app.add_command(label='关于 DouFTP Server 桌面端',
+                          command=self.open_about)
+        # m_app.add_command(label='检查更新', command=self.root.open_about)
+        m_app.add_separator()
+
+        # 将下拉菜单加到菜单栏
+        self.menubar.add_cascade(label="DouFTP Server", menu=m_app)
+
+        # 将菜单栏添加到窗口
+        self.config(menu=self.menubar)
+
     def load_view(self):
         """界面"""
+        self.update()
 
         Label(self, text="账号:").grid(column=0, row=0, sticky="nswe")
         self.entry_username = Entry(self, textvariable=self.var_username, bd=2)
@@ -113,9 +140,28 @@ class FTP(Tk):
         self.btn_start = Button(btn_box, text="启动", command=self.run_ftp)
         self.btn_start.pack(side="left")
 
-        self.btn_stop = Button(
-            btn_box, text="停止", command=self.stop_ftp, state="disable")
+        self.btn_stop = Button(btn_box,
+                               text="停止",
+                               command=self.stop_ftp,
+                               state="disable")
         self.btn_stop.pack(side="left")
+
+    def open_about(self):
+        """打开关于窗口"""
+        if self.win_about and self.win_about.destroy:
+            try:
+                self.win_about.lift()
+            except:
+                # 打开异常：销毁、新建
+                self.win_about.destroy()
+                self.win_about = WinAbout(self)
+        else:
+            # 新建
+            self.win_about = WinAbout(self)
+
+    def open_settings(self):
+        '''打开配置窗口'''
+        messagebox.showerror(title="提示", message="配置功能未实现", parent=self)
 
     def selectPath(self):
         path = filedialog.askdirectory()
@@ -133,21 +179,5 @@ class FTP(Tk):
         self.btn_select_path["state"] = a
         self.btn_start["text"] = "运行中" if (state == "readonly") else "启动"
         self.btn_start["state"] = a
-        self.btn_stop["state"] = "normal" if (
-            state == "readonly") else "disable"
-
-    def set_window_center(self, window, width, height):
-        """设置窗口宽高及居中"""
-        # 获取屏幕 宽、高
-        w_s = window.winfo_screenwidth()
-        h_s = window.winfo_screenheight()
-        # 计算 x, y 位置
-        x_co = (w_s - width) / 2
-        y_co = (h_s - height) / 2 - 50
-        window.geometry("%dx%d+%d+%d" % (width, height, x_co, y_co))
-        window.minsize(width, height)
-
-
-if __name__ == "__main__":
-    ftp = FTP()
-    ftp.mainloop()
+        self.btn_stop["state"] = "normal" if (state
+                                              == "readonly") else "disable"

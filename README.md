@@ -1,1 +1,3 @@
-# tkinter-ftp-gui-server
+# douftp-server-desktop
+
+DouFTP Server 桌面端
