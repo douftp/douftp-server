@@ -47,7 +47,7 @@ coll = COLLECT(exe,
 app = BUNDLE(
     coll,
     name='DouFTP Server.app',
-    # icon='resources/app.icns',
+    icon='resources/app.icns',
     bundle_identifier='org.douftp.server.desktop',
     info_plist={
         'CFBundleName': 'DouFTP Server',
